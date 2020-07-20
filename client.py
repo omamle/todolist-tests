@@ -13,8 +13,7 @@ def get_task(task_id):
     return r.json()
 
 
-# create task doesn't use task_id in server.py implementation?
-def create_task(task_id, task_name, completed):
+def create_task(task_name, completed):
     params = {"task": task_name, "completed": completed}
     r = requests.post(SERVER_URL.format(PATH="tasks"), json=params)
     return r.json()
