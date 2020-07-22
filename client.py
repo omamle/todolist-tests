@@ -16,7 +16,7 @@ def request(request_info):
                         (if none - {} or None)
     :returns: the json response from the server
     :raises AssertionError: if request_info  length isn't 3
-    :raises ConnectionError: when can't connect to server TODO:
+    :raises ConnectionError: when can't connect to server
     :raises AssertionError: if response status code isn't 200
     """
     assert len(request_info) == 3, "Missing parameters"
