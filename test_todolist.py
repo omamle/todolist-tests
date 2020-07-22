@@ -1,13 +1,16 @@
 import requests
 import client
+import pytest
 
 
+@pytest.mark.dependency()
 def test_list_tasks():
     tasks = client.list_tasks()
 
     return True
 
 
+@pytest.mark.dependency(depends=["test_list_tasks"])
 def test_get_task():
     success = False
     tasks = client.list_tasks()
@@ -16,7 +19,7 @@ def test_get_task():
     if len(tasks) > 0:
         existing_id = tasks[0]["id"]
         task = client.get_task(existing_id)
-        success = tasks[0]["task"] == task["task"] and \
+        success = tasks[0]["tassk"] == task["task"] and \
             tasks[0]["completed"] == task["completed"]
     # try to get non-existing ID
     # task = client.get_task("Non_Existent")
@@ -25,6 +28,7 @@ def test_get_task():
     return success
 
 
+@pytest.mark.dependency(depends=["test_list_tasks"])
 def test_create_tasks():
     old_tasks = client.list_tasks()
     new_task = client.create_task("new_task", False)
@@ -36,6 +40,7 @@ def test_create_tasks():
         not any([new_id == task["id"] for task in old_tasks])
 
 
+@pytest.mark.dependency(depends=["test_list_tasks", "test_get_task"])
 def test_modify_task():
     success = True
     tasks = client.list_tasks()
@@ -50,6 +55,7 @@ def test_modify_task():
     return success
 
 
+@pytest.mark.dependency(depends=["test_create_task", "test_get_task"])
 def test_task_complete():
     task_id = client.create_task("incomplete_task", False)["task_id"]
     client.task_completed(task_id)
@@ -62,6 +68,7 @@ def test_task_complete():
     return complete["completed"] and still_complete["completed"]
 
 
+@pytest.mark.dependency(depends=["test_create_task", "test_get_task"])
 def test_task_incomplete():
     task_id = client.create_task("complete_task", True)["task_id"]
     client.task_incomplete(task_id)
@@ -74,6 +81,7 @@ def test_task_incomplete():
     return not incomplete["completed"] and not still_incomplete["completed"]
 
 
+@pytest.mark.dependency(depends=["test_list_tasks", "test_create_task"])
 def test_delete_tasks():
     task_id = client.create_task("to_delete", False)["task_id"]
     list_before = client.list_tasks()
@@ -88,34 +96,35 @@ def test_delete_tasks():
     return len(list_after) == len(list_before) - 1 and deleted
 
 
-def run_tests():
-    tests = [test_list_tasks,
-             test_get_task,
-             test_create_tasks,
-             test_modify_task,
-             test_task_complete,
-             test_task_incomplete,
-             test_delete_tasks]
+# Unnecessary due to pytest
+# def run_tests():
+#     tests = [test_list_tasks,
+#              test_get_task,
+#              test_create_tasks,
+#              test_modify_task,
+#              test_task_complete,
+#              test_task_incomplete,
+#              test_delete_tasks]
 
-    success_count = 0
+#     success_count = 0
 
-    try:
-        for test in tests:
-            try:
-                if test():
-                    print "TEST {} PASSED".format(test.func_name)
-                    success_count += 1
-                else:
-                    print "TEST {} FAILED".format(test.func_name)
-            except AssertionError as error:
-                print error.message, " in {}".format(test.func_name)
-    except requests.exceptions.ConnectionError:
-        print "Failed to connect to server."
-        print "Make sure it's running on {}".format(client.SERVER_URL)
-        print "or modify SERVER_URL in client.py accordingly"
+#     try:
+#         for test in tests:
+#             try:
+#                 if test():
+#                     print "TEST {} PASSED".format(test.func_name)
+#                     success_count += 1
+#                 else:
+#                     print "TEST {} FAILED".format(test.func_name)
+#             except AssertionError as error:
+#                 print error.message, " in {}".format(test.func_name)
+#     except requests.exceptions.ConnectionError:
+#         print "Failed to connect to server."
+#         print "Make sure it's running on {}".format(client.SERVER_URL)
+#         print "or modify SERVER_URL in client.py accordingly"
 
-    print "PASSED {}/{} TESTS".format(success_count, len(tests))
+#     print "PASSED {}/{} TESTS".format(success_count, len(tests))
 
 
-if __name__ == "__main__":
-    run_tests()
+# if __name__ == "__main__":
+#     run_tests()
