@@ -1,4 +1,3 @@
-import requests
 from client import request, list_tasks, get_task, create_task, modify_task, \
     task_completed, task_incomplete, delete_task
 import pytest
@@ -32,11 +31,6 @@ def test_get_task():
 
     assert tasks[0]["task"] == task["task"]
     assert tasks[0]["completed"] == task["completed"]
-
-    # TODO:
-    # try to get non-existing ID
-    # task = request(get_task("Non_Existent"))
-    # print task
 
 
 @pytest.mark.dependency(depends=["test_list_tasks", "test_get_task"])
