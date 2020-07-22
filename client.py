@@ -64,23 +64,3 @@ def delete_task(task_id):
     assert r.status_code == 200, \
            "Error {} in delete_task".format(r.status_code)
     return r.json()
-
-
-def main():
-    try:
-        print list_tasks()
-        print get_task("zJX8KXIe")
-        print create_task("task_555", False)
-        print list_tasks()
-        print delete_task("zJX8KXIe")
-        print list_tasks()
-        print task_completed("LmtlN1Bl")
-        print list_tasks()
-        print task_incomplete("LmtlN1Bl")
-        print list_tasks()
-    except requests.exceptions.ConnectionError:
-        print "Failed to connect to server."
-
-
-if __name__ == "__main__":
-    main()
