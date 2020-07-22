@@ -6,53 +6,50 @@ import pytest
 @pytest.mark.dependency()
 def test_list_tasks():
     tasks = client.list_tasks()
+    assert type(tasks) == list
 
-    return True
+
+@pytest.mark.dependency(depends=["test_list_tasks"])
+def test_create_task():
+    old_tasks = client.list_tasks()
+    created_task = client.create_task("created", False)
+    new_tasks = client.list_tasks()
+    new_id = created_task["task_id"]
+
+    # make sure task was created and wasn't there before
+    assert any([new_id == task["id"] for task in new_tasks]), "Task not created"
+    assert not any([new_id == task["id"] for task in old_tasks])
 
 
 @pytest.mark.dependency(depends=["test_list_tasks"])
 def test_get_task():
-    success = False
     tasks = client.list_tasks()
+    assert len(tasks) > 0, "No tasks to get"
 
-    # try get  an existing task
-    if len(tasks) > 0:
-        existing_id = tasks[0]["id"]
-        task = client.get_task(existing_id)
-        success = tasks[0]["tassk"] == task["task"] and \
-            tasks[0]["completed"] == task["completed"]
+    existing_id = tasks[0]["id"]
+    task = client.get_task(existing_id)
+
+    assert tasks[0]["task"] == task["task"]
+    assert tasks[0]["completed"] == task["completed"]
+
+    # TODO:
     # try to get non-existing ID
     # task = client.get_task("Non_Existent")
     # print task
 
-    return success
-
-
-@pytest.mark.dependency(depends=["test_list_tasks"])
-def test_create_tasks():
-    old_tasks = client.list_tasks()
-    new_task = client.create_task("new_task", False)
-    new_tasks = client.list_tasks()
-
-    new_id = new_task["task_id"]
-
-    return any([new_id == task["id"] for task in new_tasks]) and \
-        not any([new_id == task["id"] for task in old_tasks])
-
 
 @pytest.mark.dependency(depends=["test_list_tasks", "test_get_task"])
 def test_modify_task():
-    success = True
     tasks = client.list_tasks()
+    assert len(tasks) > 0, "No tasks to modify"
 
-    if len(tasks) > 0:
-        old_task = tasks[0]
-        client.modify_task(old_task["id"], "modified_task", True)
-        new_task = client.get_task(old_task["id"])
-        success = new_task["task"] == "modified_task" and \
-            new_task["completed"] is True
+    # modify first task in list
+    old_task = tasks[0]
+    client.modify_task(old_task["id"], "modified_task", True)
+    modified_task = client.get_task(old_task["id"])
 
-    return success
+    assert modified_task["task"] == "modified_task"
+    assert modified_task["completed"]
 
 
 @pytest.mark.dependency(depends=["test_create_task", "test_get_task"])
@@ -65,7 +62,8 @@ def test_task_complete():
     client.task_completed(task_id)
     still_complete = client.get_task(task_id)
 
-    return complete["completed"] and still_complete["completed"]
+    assert complete["completed"]
+    assert still_complete["completed"]
 
 
 @pytest.mark.dependency(depends=["test_create_task", "test_get_task"])
@@ -78,7 +76,8 @@ def test_task_incomplete():
     client.task_incomplete(task_id)
     still_incomplete = client.get_task(task_id)
 
-    return not incomplete["completed"] and not still_incomplete["completed"]
+    assert not incomplete["completed"] 
+    assert not still_incomplete["completed"]
 
 
 @pytest.mark.dependency(depends=["test_list_tasks", "test_create_task"])
@@ -89,42 +88,8 @@ def test_delete_tasks():
     list_after = client.list_tasks()
 
     # make sure task was in list before and isn't in list after
-    deleted = any([task_id == task["id"] for task in list_before]) and \
-        not any([task_id == task["id"] for task in list_after])
+    assert any([task_id == task["id"] for task in list_before])
+    assert not any([task_id == task["id"] for task in list_after])
 
     # also make sure only one task got deleted
-    return len(list_after) == len(list_before) - 1 and deleted
-
-
-# Unnecessary due to pytest
-# def run_tests():
-#     tests = [test_list_tasks,
-#              test_get_task,
-#              test_create_tasks,
-#              test_modify_task,
-#              test_task_complete,
-#              test_task_incomplete,
-#              test_delete_tasks]
-
-#     success_count = 0
-
-#     try:
-#         for test in tests:
-#             try:
-#                 if test():
-#                     print "TEST {} PASSED".format(test.func_name)
-#                     success_count += 1
-#                 else:
-#                     print "TEST {} FAILED".format(test.func_name)
-#             except AssertionError as error:
-#                 print error.message, " in {}".format(test.func_name)
-#     except requests.exceptions.ConnectionError:
-#         print "Failed to connect to server."
-#         print "Make sure it's running on {}".format(client.SERVER_URL)
-#         print "or modify SERVER_URL in client.py accordingly"
-
-#     print "PASSED {}/{} TESTS".format(success_count, len(tests))
-
-
-# if __name__ == "__main__":
-#     run_tests()
+    assert len(list_after) == len(list_before) - 1
